@@ -406,7 +406,11 @@ details.pt summary::-webkit-details-marker{display:none}
   </details>
   <button class="primary" id="setSave">保存</button>
   <a class="primary secondary" href="timetable.ics" download
-     style="display:block;text-align:center;text-decoration:none">下载日历文件（手机桌面小组件用）</a>
+     style="display:block;text-align:center;text-decoration:none">下载日历文件</a>
+  <a class="primary secondary" href="webcal://onepro07.github.io/timetable/timetable.ics"
+     style="display:block;text-align:center;text-decoration:none">订阅日历（课表变了自动更新）</a>
+  <p class="tip">导入或订阅后，长按手机桌面空白处 → 添加小组件 → 选「日历 / 日程」，
+     课表才会出现在桌面上。文件本身不会自己变成小组件。</p>
   <button class="primary secondary" id="setReset">恢复默认时间</button>
   <p class="tip">数据由电脑上的「抓取课表.py」生成，更新课表后重跑一次脚本即可。账号密码只存在那台电脑上，网页不碰。</p>
 </div>
