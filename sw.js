@@ -1,4 +1,4 @@
-const CACHE = 'kb-v1';
+const CACHE = 'kb-v2';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png'];
 
 self.addEventListener('install', e => {
