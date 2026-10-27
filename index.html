@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f6fb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="课表">
+<title>我的课表</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+:root{
+  --ink:#151b28;
+  --ink2:#4d5766;
+  --ink3:#8a94a6;
+  --glass:rgba(255,255,255,.52);
+  --glass2:rgba(255,255,255,.34);
+  --glass-line:rgba(255,255,255,.78);
+  --hair:rgba(22,34,56,.09);
+  --hair2:rgba(22,34,56,.055);
+  --accent:#3a6ff7;
+  --r:22px;
+  --shadow:0 12px 34px rgba(32,48,80,.11),0 2px 6px rgba(32,48,80,.05);
+  --shadow-sm:0 6px 18px rgba(32,48,80,.09),0 1px 3px rgba(32,48,80,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --ink:#eef2f9;
+    --ink2:#a7b3c6;
+    --ink3:#728094;
+    --glass:rgba(38,47,62,.55);
+    --glass2:rgba(38,47,62,.34);
+    --glass-line:rgba(255,255,255,.13);
+    --hair:rgba(255,255,255,.11);
+    --hair2:rgba(255,255,255,.06);
+    --accent:#7fa1ff;
+    --shadow:0 14px 40px rgba(0,0,0,.42),0 2px 6px rgba(0,0,0,.3);
+    --shadow-sm:0 8px 22px rgba(0,0,0,.34);
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  color:var(--ink);
+  min-height:100vh;
+  background:#eef2f9;
+  -webkit-font-smoothing:antialiased;
+  font-size:15px;
+  overflow-x:hidden;
+}
+@media (prefers-color-scheme: dark){ body{background:#0b0f16} }
+
+/* 背景光斑：玻璃需要背后有东西才有折射感 */
+.blobs{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.blobs i{position:absolute;display:block;border-radius:50%;filter:blur(80px);opacity:.62}
+.blobs i:nth-child(1){width:460px;height:460px;left:-120px;top:-140px;
+  background:radial-gradient(circle at 35% 35%,#8fb4ff,#c9b8ff 70%);}
+.blobs i:nth-child(2){width:420px;height:420px;right:-140px;top:60px;
+  background:radial-gradient(circle at 40% 40%,#8ee6d8,#a8f0c9 70%);opacity:.5}
+.blobs i:nth-child(3){width:520px;height:520px;left:20%;bottom:-260px;
+  background:radial-gradient(circle at 50% 40%,#ffc9e0,#ffd9b8 72%);opacity:.52}
+@media (prefers-color-scheme: dark){
+  .blobs i{opacity:.3;filter:blur(96px)}
+}
+
+.wrap{max-width:760px;margin:0 auto;padding:0 14px 40px;position:relative}
+
+/* 顶部 */
+header{
+  position:sticky;top:0;z-index:20;
+  padding:calc(env(safe-area-inset-top) + 14px) 14px 10px;
+  margin:0 -14px 4px;
+  background:linear-gradient(180deg,rgba(238,242,249,.78),rgba(238,242,249,.42) 72%,transparent);
+  backdrop-filter:blur(18px) saturate(160%);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+}
+@media (prefers-color-scheme: dark){
+  header{background:linear-gradient(180deg,rgba(11,15,22,.86),rgba(11,15,22,.45) 72%,transparent)}
+}
+.hrow{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;max-width:732px;margin:0 auto}
+h1{font-size:22px;font-weight:650;letter-spacing:.2px;margin:0}
+.sub{font-size:12px;color:var(--ink3);margin-top:3px}
+
+/* 玻璃砖 */
+.glass{
+  background:linear-gradient(158deg,rgba(255,255,255,.60),rgba(255,255,255,.36));
+  -webkit-backdrop-filter:blur(28px) saturate(185%);
+  backdrop-filter:blur(28px) saturate(185%);
+  border:1px solid var(--glass-line);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.92),inset 0 -1px 0 rgba(255,255,255,.28);
+}
+@media (prefers-color-scheme: dark){
+  .glass{
+    background:linear-gradient(158deg,rgba(46,56,72,.62),rgba(32,40,54,.42));
+    box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.14),inset 0 -1px 0 rgba(255,255,255,.04);
+  }
+}
+
+.iconbtn{
+  border:1px solid var(--glass-line);
+  background:linear-gradient(158deg,rgba(255,255,255,.62),rgba(255,255,255,.34));
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  backdrop-filter:blur(24px) saturate(180%);
+  color:var(--ink2);
+  width:38px;height:38px;border-radius:13px;display:grid;place-items:center;
+  box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,.9);
+  cursor:pointer;flex:0 0 auto;transition:transform .16s;
+}
+.iconbtn:active{transform:scale(.93)}
+@media (prefers-color-scheme: dark){
+  .iconbtn{background:linear-gradient(158deg,rgba(46,56,72,.7),rgba(32,40,54,.5));
+    box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,.12)}
+}
+
+/* tab 胶囊 */
+.tabs{
+  display:flex;gap:5px;padding:5px;border-radius:16px;
+  margin:10px auto 14px;max-width:732px;
+  background:rgba(255,255,255,.30);
+  -webkit-backdrop-filter:blur(22px) saturate(170%);
+  backdrop-filter:blur(22px) saturate(170%);
+  border:1px solid rgba(255,255,255,.62);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75);
+}
+.tabs button{
+  flex:1;border:0;background:transparent;color:var(--ink2);font:inherit;font-size:14px;
+  padding:9px 0;border-radius:12px;cursor:pointer;transition:.2s;
+}
+.tabs button.on{
+  background:linear-gradient(160deg,rgba(255,255,255,.95),rgba(255,255,255,.72));
+  color:var(--ink);font-weight:600;
+  box-shadow:0 2px 8px rgba(32,48,80,.12),inset 0 1px 0 #fff;
+}
+@media (prefers-color-scheme: dark){
+  .tabs{background:rgba(40,50,64,.4);border-color:rgba(255,255,255,.1)}
+  .tabs button.on{background:linear-gradient(160deg,rgba(70,84,106,.95),rgba(48,58,76,.85));
+    box-shadow:0 2px 8px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.12)}
+}
+
+/* 日期条 */
+.datebar{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:0 auto 12px;max-width:732px}
+.datebar .mid{text-align:center;flex:1;min-width:0}
+.datebar .d1{font-size:16px;font-weight:620;letter-spacing:.2px}
+.datebar .d2{font-size:11.5px;color:var(--ink3);margin-top:2px}
+.nav{
+  border:1px solid var(--glass-line);
+  background:linear-gradient(158deg,rgba(255,255,255,.58),rgba(255,255,255,.3));
+  -webkit-backdrop-filter:blur(22px) saturate(170%);
+  backdrop-filter:blur(22px) saturate(170%);
+  width:36px;height:36px;border-radius:12px;color:var(--ink2);
+  box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,.85);
+  cursor:pointer;font-size:16px;display:grid;place-items:center;flex:0 0 auto;
+  transition:transform .16s;
+}
+.nav:active{transform:scale(.92)}
+@media (prefers-color-scheme: dark){
+  .nav{background:linear-gradient(158deg,rgba(46,56,72,.66),rgba(32,40,54,.46));
+    box-shadow:var(--shadow-sm),inset 0 1px 0 rgba(255,255,255,.1)}
+}
+.ghost{
+  border:0;background:transparent;color:var(--accent);font:inherit;font-size:12.5px;
+  padding:6px 8px;border-radius:9px;cursor:pointer;flex:0 0 auto;
+}
+
+/* 今日课程卡 */
+.daylist{display:flex;flex-direction:column;gap:10px;max-width:732px;margin:0 auto}
+.lesson{
+  display:flex;gap:13px;align-items:stretch;
+  border-radius:var(--r);
+  padding:14px 15px;position:relative;overflow:hidden;cursor:pointer;
+  background:linear-gradient(158deg,rgba(255,255,255,.62),rgba(255,255,255,.34));
+  -webkit-backdrop-filter:blur(26px) saturate(185%);
+  backdrop-filter:blur(26px) saturate(185%);
+  border:1px solid var(--glass-line);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.9);
+  transition:transform .18s;
+}
+.lesson:active{transform:scale(.988)}
+.lesson::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3.5px;background:var(--c);
+  box-shadow:0 0 14px var(--c)}
+.lesson .t{flex:0 0 54px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.lesson .t b{font-size:13.5px;font-weight:680;letter-spacing:-.2px;color:var(--c)}
+.lesson .t span{font-size:10.5px;color:var(--ink3);letter-spacing:-.2px;font-variant-numeric:tabular-nums}
+.lesson .b{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.lesson .nm{font-size:15px;font-weight:600;letter-spacing:.1px;line-height:1.32;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.lesson .mt{font-size:12px;color:var(--ink2);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.lesson .mt i{font-style:normal;color:var(--ink3)}
+.lesson.now{box-shadow:0 0 0 1.5px var(--c),var(--shadow),inset 0 1px 0 rgba(255,255,255,.9)}
+@media (prefers-color-scheme: dark){
+  .lesson{background:linear-gradient(158deg,rgba(48,58,74,.6),rgba(32,40,54,.4));
+    box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.13)}
+}
+
+/* 空状态 */
+.empty{
+  text-align:center;padding:52px 20px;color:var(--ink3);
+  border-radius:var(--r);max-width:732px;margin:0 auto;
+  background:linear-gradient(158deg,rgba(255,255,255,.55),rgba(255,255,255,.3));
+  -webkit-backdrop-filter:blur(26px) saturate(180%);
+  backdrop-filter:blur(26px) saturate(180%);
+  border:1px solid var(--glass-line);
+  box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.9);
+}
+.empty b{display:block;color:var(--ink2);font-size:15px;font-weight:600;margin-bottom:6px}
+.empty p{margin:0;font-size:12.5px;line-height:1.7}
+@media (prefers-color-scheme: dark){
+  .empty{background:linear-gradient(158deg,rgba(48,58,74,.55),rgba(32,40,54,.35));
+    box-shadow:var(--shadow),inset 0 1px 0 rgba(255,255,255,.12)}
+}
+
+/* 周网格 */
+.scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0;padding:0}
+.grid{
+  display:grid;grid-template-columns:30px repeat(7,minmax(0,1fr));
+  gap:4px;min-width:0;position:relative;
+}
+.gh{font-size:10.5px;color:var(--ink3);text-align:center;padding:3px 0 5px;line-height:1.35}
+.gh b{display:block;color:var(--ink2);font-size:12px;font-weight:620}
+.gh.today b{color:var(--accent)}
+.gh.today{color:var(--accent)}
+.slotnum{font-size:10px;color:var(--ink3);text-align:right;padding-right:1px;
+  display:flex;align-items:flex-start;justify-content:flex-end;padding-top:5px}
+.cell-bg{
+  border-radius:10px;min-height:40px;
+  background:rgba(255,255,255,.30);
+  border:1px solid rgba(255,255,255,.5);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.6);
+}
+@media (prefers-color-scheme: dark){
+  .cell-bg{background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.07);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+}
+.course{
+  border-radius:11px;padding:5px 5px;font-size:10.5px;line-height:1.32;
+  overflow:hidden;cursor:pointer;display:flex;flex-direction:column;gap:2px;
+  color:#1b2333;
+  background:linear-gradient(158deg,
+    color-mix(in srgb, var(--c) 30%, rgba(255,255,255,.66)),
+    color-mix(in srgb, var(--c) 16%, rgba(255,255,255,.5)));
+  -webkit-backdrop-filter:blur(18px) saturate(170%);
+  backdrop-filter:blur(18px) saturate(170%);
+  border:1px solid rgba(255,255,255,.72);
+  border-left:2.5px solid var(--c);
+  box-shadow:0 3px 10px rgba(32,48,80,.10),inset 0 1px 0 rgba(255,255,255,.85);
+  transition:transform .16s;
+}
+.course:active{transform:scale(.96)}
+.course b{font-weight:640;font-size:10.5px;display:-webkit-box;-webkit-line-clamp:3;
+  -webkit-box-orient:vertical;overflow:hidden;word-break:break-all;letter-spacing:-.1px}
+.course span{font-size:9px;opacity:.68;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (prefers-color-scheme: dark){
+  .course{
+    color:#e9eef7;
+    background:linear-gradient(158deg,
+      color-mix(in srgb, var(--c) 26%, rgba(28,36,50,.66)),
+      color-mix(in srgb, var(--c) 14%, rgba(20,27,38,.55)));
+    border-color:rgba(255,255,255,.12);
+    box-shadow:0 3px 12px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.1);
+  }
+}
+
+/* 弹层 */
+.mask{position:fixed;inset:0;background:rgba(18,26,40,.34);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  opacity:0;pointer-events:none;transition:.24s;z-index:40}
+.mask.on{opacity:1;pointer-events:auto}
+.sheet{
+  position:fixed;left:0;right:0;bottom:0;z-index:41;
+  border-radius:26px 26px 0 0;
+  padding:10px 18px calc(env(safe-area-inset-bottom) + 22px);
+  transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1),visibility .3s;
+  visibility:hidden;
+  max-width:760px;margin:0 auto;max-height:86vh;overflow:auto;
+  background:linear-gradient(168deg,rgba(255,255,255,.9),rgba(255,255,255,.78));
+  -webkit-backdrop-filter:blur(40px) saturate(190%);
+  backdrop-filter:blur(40px) saturate(190%);
+  border-top:1px solid rgba(255,255,255,.9);
+  box-shadow:0 -12px 48px rgba(24,36,58,.2),inset 0 1px 0 #fff;
+}
+.sheet.on{transform:translateY(0);visibility:visible}
+@media (prefers-color-scheme: dark){
+  .sheet{background:linear-gradient(168deg,rgba(34,43,58,.94),rgba(24,31,43,.9));
+    border-top-color:rgba(255,255,255,.14);
+    box-shadow:0 -12px 48px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.12)}
+}
+.grab{width:38px;height:5px;border-radius:99px;background:rgba(22,34,56,.16);margin:4px auto 14px}
+@media (prefers-color-scheme: dark){ .grab{background:rgba(255,255,255,.22)} }
+.sheet h3{margin:0 0 12px;font-size:17px;font-weight:650}
+.kv{display:flex;justify-content:space-between;gap:16px;padding:11px 0;
+  border-bottom:1px solid var(--hair2);font-size:14px}
+.kv:last-of-type{border-bottom:0}
+.kv span{color:var(--ink3);font-size:13px;flex:0 0 auto}
+.kv b{font-weight:550;text-align:right}
+.field{margin:14px 0}
+.field label{display:block;font-size:12.5px;color:var(--ink3);margin-bottom:6px}
+.field input{
+  width:100%;font:inherit;font-size:14px;padding:11px 12px;border-radius:12px;
+  border:1px solid var(--hair);background:rgba(255,255,255,.6);color:var(--ink);
+  box-shadow:inset 0 1px 2px rgba(22,34,56,.04);
+}
+@media (prefers-color-scheme: dark){
+  .field input{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.12)}
+}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid2 .field{margin:0}
+.primary{
+  width:100%;margin-top:16px;padding:13px;border:0;border-radius:14px;
+  background:linear-gradient(180deg,#5b8cf9,#3568e6);color:#fff;
+  font:inherit;font-size:14.5px;font-weight:600;cursor:pointer;
+  box-shadow:0 8px 20px rgba(58,111,247,.32),inset 0 1px 0 rgba(255,255,255,.35);
+}
+.primary:active{transform:translateY(1px)}
+.secondary{background:transparent;color:var(--ink2);border:1px solid var(--hair);
+  box-shadow:none;margin-top:8px;font-weight:500}
+.tip{font-size:11.5px;color:var(--ink3);line-height:1.7;margin-top:10px}
+details.pt{margin-top:6px}
+details.pt summary{font-size:12.5px;color:var(--accent);cursor:pointer;padding:8px 0;list-style:none}
+details.pt summary::-webkit-details-marker{display:none}
+.ptrow{display:grid;grid-template-columns:26px 1fr 1fr;gap:6px;align-items:center;margin-bottom:5px}
+.ptrow em{font-style:normal;font-size:11.5px;color:var(--ink3);text-align:center}
+.ptrow input{padding:7px 8px;font-size:12.5px;border-radius:9px}
+
+@supports not (backdrop-filter: blur(1px)){
+  .glass,.lesson,.empty,.tabs,.nav,.iconbtn{background:rgba(255,255,255,.86)}
+}
+</style>
+</head>
+<body>
+<div class="blobs"><i></i><i></i><i></i></div>
+<div class="wrap">
+  <header>
+    <div class="hrow">
+      <div>
+        <h1>我的课表</h1>
+        <div class="sub" id="sub">正在读取…</div>
+      </div>
+      <button class="iconbtn" id="btnSet" aria-label="设置">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="12" cy="12" r="3.2"/>
+          <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>
+        </svg>
+      </button>
+    </div>
+    <div class="tabs">
+      <button id="tabDay" class="on">今天</button>
+      <button id="tabWeek">整周</button>
+    </div>
+  </header>
+
+  <div id="dayView">
+    <div class="datebar">
+      <button class="nav" id="dPrev">‹</button>
+      <div class="mid">
+        <div class="d1" id="dTitle">—</div>
+        <div class="d2" id="dSub"></div>
+      </div>
+      <button class="nav" id="dNext">›</button>
+    </div>
+    <div class="daylist" id="dayList"></div>
+  </div>
+
+  <div id="weekView" style="display:none">
+    <div class="datebar">
+      <button class="nav" id="wPrev">‹</button>
+      <div class="mid">
+        <div class="d1" id="wTitle">—</div>
+        <div class="d2" id="wSub"></div>
+      </div>
+      <button class="nav" id="wNext">›</button>
+    </div>
+    <button class="ghost" id="wToday" style="display:block;margin:0 auto 10px">回到本周</button>
+    <div class="scroller"><div class="grid" id="grid"></div></div>
+  </div>
+</div>
+
+<div class="mask" id="mask"></div>
+
+<div class="sheet" id="detail">
+  <div class="grab"></div>
+  <h3 id="dtName">课程</h3>
+  <div id="dtBody"></div>
+  <button class="primary" id="dtClose">知道了</button>
+</div>
+
+<div class="sheet" id="setting">
+  <div class="grab"></div>
+  <h3>设置</h3>
+  <div class="field">
+    <label>开学第一周的周一（用于算第几周）</label>
+    <input type="date" id="setStart">
+  </div>
+  <details class="pt">
+    <summary>节次时间（点开可改）</summary>
+    <div id="ptEditor"></div>
+  </details>
+  <button class="primary" id="setSave">保存</button>
+  <a class="primary secondary" href="timetable.ics" download
+     style="display:block;text-align:center;text-decoration:none">下载日历文件（手机桌面小组件用）</a>
+  <button class="primary secondary" id="setReset">恢复默认时间</button>
+  <p class="tip">数据由电脑上的「抓取课表.py」生成，更新课表后重跑一次脚本即可。账号密码只存在那台电脑上，网页不碰。</p>
+</div>
+
+<script>
+const DAY_CN = ['一','二','三','四','五','六','日'];
+// 一大节 = 两小节；时间按学校《23-24级新校区上课时间表》
+const DEF_PERIODS = [
+  ['08:00','08:45'],['08:50','09:35'],
+  ['09:50','10:35'],['10:40','11:25'],
+  ['14:00','14:45'],['14:50','15:35'],
+  ['15:50','16:35'],['16:40','17:25'],
+  ['19:00','19:45'],['19:50','20:35']
+];
+const HUE = [212,262,168,32,340,190,120,286,48,230,152,8];
+
+const $ = s => document.querySelector(s);
+let DATA = {courses:[]}, META = {};
+let state = { day: new Date(), week: 1, tab: 'day' };
+let settings = { startDate: '', periods: DEF_PERIODS.map(p => p.slice()) };
+
+/* ---------- 存储 ---------- */
+function loadSettings(){
+  try{
+    const raw = localStorage.getItem('kb.settings');
+    if(raw){
+      const o = JSON.parse(raw);
+      if(o.startDate) settings.startDate = o.startDate;
+      if(Array.isArray(o.periods) && o.periods.length === DEF_PERIODS.length) settings.periods = o.periods;
+    }
+  }catch(e){}
+}
+function saveSettings(){ localStorage.setItem('kb.settings', JSON.stringify(settings)); }
+
+/* ---------- 时间工具 ---------- */
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+function parseYmd(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function mondayOf(d){ const x = new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate() - ((x.getDay()+6)%7)); return x; }
+function addDays(d,n){ const x = new Date(d); x.setDate(x.getDate()+n); return x; }
+function weekRange(w){
+  const base = settings.startDate ? mondayOf(parseYmd(settings.startDate)) : mondayOf(new Date());
+  const mon = addDays(base, (w-1)*7);
+  return {mon, sun: addDays(mon,6)};
+}
+function weekOf(d){
+  if(!settings.startDate) return 1;
+  const base = mondayOf(parseYmd(settings.startDate));
+  return Math.floor((mondayOf(d) - base) / 6048e5) + 1;
+}
+function periodTime(n){
+  const p = settings.periods[n-1];
+  return p ? `${p[0]}–${p[1]}` : '';
+}
+
+/* ---------- 课程匹配 ---------- */
+function coursesOn(date){
+  const w = weekOf(date);
+  const day = ((date.getDay()+6)%7) + 1;
+  return DATA.courses
+    .filter(c => c.day === day && (!c.weeks || c.weeks.includes(w)))
+    .sort((a,b) => a.start - b.start);
+}
+function colorOf(name){
+  let h = 0;
+  for(const ch of name) h = (h*31 + ch.codePointAt(0)) % 997;
+  return HUE[h % HUE.length];
+}
+
+/* ---------- 渲染：今天 ---------- */
+function renderDay(){
+  const d = state.day, list = coursesOn(d);
+  const today = ymd(d) === ymd(new Date());
+  $('#dTitle').textContent = `${d.getMonth()+1}月${d.getDate()}日 周${DAY_CN[(d.getDay()+6)%7]}`;
+  const w = weekOf(d);
+  $('#dSub').textContent = (today ? '今天 · ' : '') + `第 ${w} 周 · ${list.length} 节`;
+
+  const box = $('#dayList');
+  if(!list.length){
+    box.innerHTML = `<div class="empty"><b>这天没有课</b><p>好好休息，或者去图书馆。</p></div>`;
+    return;
+  }
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+  box.innerHTML = list.map(c => {
+    const h = colorOf(c.name);
+    const t1 = periodTime(c.start), t2 = periodTime(c.end);
+    const [sh,sm] = (settings.periods[c.start-1]||['00:00'])[0].split(':').map(Number);
+    const [,em] = (settings.periods[c.end-1]||['00:00','00:00'])[1].split(':').map(Number);
+    const eh = Number((settings.periods[c.end-1]||['00:00'])[1].slice(0,2));
+    const live = today && nowMin >= sh*60+sm && nowMin <= eh*60+em;
+    return `<div class="lesson ${live?'now':''}" data-i="${DATA.courses.indexOf(c)}"
+      style="--c:hsl(${h} 58% 58%)">
+      <div class="t"><b>${c.start}-${c.end}</b><span>${t1.slice(0,5)}</span><span>${t2.slice(6)}</span></div>
+      <div class="b">
+        <div class="nm">${esc(c.name)}</div>
+        <div class="mt">${c.room?`<span>${esc(c.room)}</span>`:''}${c.teacher?`<span><i>·</i> ${esc(c.teacher)}</span>`:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.lesson').forEach(el => el.onclick = () => openDetail(+el.dataset.i));
+}
+
+/* ---------- 渲染：整周 ---------- */
+function renderWeek(){
+  const {mon,sun} = weekRange(state.week);
+  $('#wTitle').textContent = `第 ${state.week} 周`;
+  $('#wSub').textContent = `${mon.getMonth()+1}/${mon.getDate()} – ${sun.getMonth()+1}/${sun.getDate()}`;
+  $('#wToday').style.display = state.week === weekOf(new Date()) ? 'none' : 'block';
+
+  const wkCourses = DATA.courses.filter(c => c.weeks && c.weeks.includes(state.week));
+  const maxEnd = wkCourses.reduce((m,c) => Math.max(m, c.end), 0);
+  const maxP = Math.min(Math.max(maxEnd, 6), settings.periods.length);
+  const g = $('#grid');
+  g.style.gridTemplateRows = `auto repeat(${maxP}, minmax(40px,auto))`;
+  let html = '<div></div>';
+  for(let i=0;i<7;i++){
+    const d = addDays(mon,i);
+    const t = ymd(d) === ymd(new Date());
+    html += `<div class="gh ${t?'today':''}"><b>${DAY_CN[i]}</b>${d.getMonth()+1}/${d.getDate()}</div>`;
+  }
+  for(let p=1;p<=maxP;p++){
+    html += `<div class="slotnum" style="grid-row:${p+1}">${p}</div>`;
+    for(let d=1;d<=7;d++){
+      html += `<div class="cell-bg" style="grid-row:${p+1};grid-column:${d+1}"></div>`;
+    }
+  }
+  g.innerHTML = html;
+
+  wkCourses.forEach((c) => {
+    const idx = DATA.courses.indexOf(c);
+    if(c.start > maxP) return;
+    const h = colorOf(c.name);
+    const span = Math.min(Math.max(c.end - c.start + 1, 1), maxP - c.start + 1);
+    const el = document.createElement('div');
+    el.className = 'course';
+    el.style.cssText = `grid-row:${c.start+1} / span ${span};grid-column:${c.day+1};
+      --c:hsl(${h} 58% 58%)`;
+    el.innerHTML = `<b>${esc(c.name)}</b>${c.room?`<span>${esc(c.room)}</span>`:''}`;
+    el.onclick = () => openDetail(idx);
+    g.appendChild(el);
+  });
+}
+
+function esc(s){ return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ---------- 详情 ---------- */
+function openDetail(i){
+  const c = DATA.courses[i];
+  if(!c) return;
+  $('#dtName').textContent = c.name;
+  $('#dtBody').innerHTML = `
+    <div class="kv"><span>时间</span><b>周${DAY_CN[c.day-1]} 第 ${c.start}–${c.end} 节</b></div>
+    <div class="kv"><span>节次时间</span><b>${periodTime(c.start).slice(0,5)} – ${periodTime(c.end).slice(6)}</b></div>
+    <div class="kv"><span>地点</span><b>${esc(c.room||'—')}</b></div>
+    <div class="kv"><span>教师</span><b>${esc(c.teacher||'—')}</b></div>
+    <div class="kv"><span>周次</span><b>${esc(c.weeksText || (c.weeks||[]).length+' 周')}</b></div>`;
+  show('detail');
+}
+function show(id){
+  $('#mask').classList.add('on');
+  $('#'+id).classList.add('on');
+}
+function hide(){
+  $('#mask').classList.remove('on');
+  document.querySelectorAll('.sheet').forEach(s => s.classList.remove('on'));
+}
+
+/* ---------- 设置 ---------- */
+function openSetting(){
+  $('#setStart').value = settings.startDate || (META.startDate || '');
+  $('#ptEditor').innerHTML = settings.periods.map((p,i) => `
+    <div class="ptrow"><em>${i+1}</em>
+      <input type="time" data-p="${i}" data-k="0" value="${p[0]}">
+      <input type="time" data-p="${i}" data-k="1" value="${p[1]}">
+    </div>`).join('');
+  show('setting');
+}
+
+/* ---------- 启动 ---------- */
+async function boot(){
+  loadSettings();
+  try{
+    const r = await fetch('schedule.json?t=' + Date.now());
+    const d = await r.json();
+    DATA.courses = d.courses || [];
+    META = d.meta || {};
+  }catch(e){
+    $('#sub').textContent = '没读到课表数据';
+    $('#dayList').innerHTML = `<div class="empty"><b>还没有课表数据</b>
+      <p>在电脑上运行「抓取课表.py」生成 schedule.json，再刷新这里。</p></div>`;
+    return;
+  }
+  if(!settings.startDate && META.startDate){ settings.startDate = META.startDate; saveSettings(); }
+
+  const today = new Date();
+  state.week = Math.max(weekOf(today), 1);
+  $('#sub').textContent = `${DATA.courses.length} 门课 · 更新于 ${META.updated || '—'}`;
+  renderDay(); renderWeek();
+}
+
+/* ---------- 事件 ---------- */
+$('#tabDay').onclick = () => {
+  state.tab='day'; $('#tabDay').classList.add('on'); $('#tabWeek').classList.remove('on');
+  $('#dayView').style.display=''; $('#weekView').style.display='none'; renderDay();
+};
+$('#tabWeek').onclick = () => {
+  state.tab='week'; $('#tabWeek').classList.add('on'); $('#tabDay').classList.remove('on');
+  $('#weekView').style.display=''; $('#dayView').style.display='none'; renderWeek();
+};
+$('#dPrev').onclick = () => { state.day = addDays(state.day,-1); renderDay(); };
+$('#dNext').onclick = () => { state.day = addDays(state.day,1); renderDay(); };
+$('#wPrev').onclick = () => { state.week--; renderWeek(); };
+$('#wNext').onclick = () => { state.week++; renderWeek(); };
+$('#wToday').onclick = () => { state.week = Math.max(weekOf(new Date()),1); renderWeek(); };
+$('#mask').onclick = hide;
+$('#dtClose').onclick = hide;
+$('#btnSet').onclick = openSetting;
+$('#setSave').onclick = () => {
+  const s = $('#setStart').value;
+  if(s) settings.startDate = s;
+  $('#ptEditor').querySelectorAll('input').forEach(inp => {
+    const p = +inp.dataset.p, k = +inp.dataset.k;
+    if(inp.value) settings.periods[p][k] = inp.value;
+  });
+  saveSettings();
+  state.week = Math.max(weekOf(new Date()),1);
+  renderDay(); renderWeek(); hide();
+};
+$('#setReset').onclick = () => {
+  settings.periods = DEF_PERIODS.map(p => p.slice());
+  saveSettings(); openSetting();
+};
+
+/* 左右滑动切周/切天 */
+let tx = 0, ty = 0;
+document.addEventListener('touchstart', e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, {passive:true});
+document.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  const dy = e.changedTouches[0].clientY - ty;
+  if(Math.abs(dx) < 60 || Math.abs(dy) > 46) return;
+  if(state.tab === 'day'){ state.day = addDays(state.day, dx > 0 ? -1 : 1); renderDay(); }
+  else { state.week += dx > 0 ? -1 : 1; renderWeek(); }
+}, {passive:true});
+
+boot();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
