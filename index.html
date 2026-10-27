@@ -17,6 +17,7 @@
 })();
 </script>
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <style>
 :root{
@@ -320,6 +321,30 @@ details.pt summary::-webkit-details-marker{display:none}
 .ptrow em{font-style:normal;font-size:11.5px;color:var(--ink3);text-align:center}
 .ptrow input{padding:7px 8px;font-size:12.5px;border-radius:9px}
 
+/* 安装到桌面：浏览器允许安装时才出现 */
+.installbar{
+  position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 16px);
+  transform:translate(-50%,140%);z-index:45;
+  display:flex;align-items:center;gap:10px;
+  padding:11px 16px;border-radius:16px;
+  background:linear-gradient(158deg,rgba(255,255,255,.92),rgba(255,255,255,.78));
+  -webkit-backdrop-filter:blur(24px) saturate(180%);
+  backdrop-filter:blur(24px) saturate(180%);
+  border:1px solid rgba(255,255,255,.9);
+  box-shadow:0 10px 30px rgba(24,36,58,.18);
+  font-size:13.5px;color:#151b28;cursor:pointer;
+  transition:transform .34s cubic-bezier(.32,.72,0,1);
+  white-space:nowrap;
+}
+.installbar.on{transform:translate(-50%,0)}
+.installbar b{font-weight:640}
+.installbar small{color:#8a94a6;font-size:11.5px}
+html[data-theme="dark"] .installbar{
+  background:linear-gradient(158deg,rgba(48,58,74,.95),rgba(32,40,54,.9));
+  border-color:rgba(255,255,255,.14);color:#eef2f9;
+  box-shadow:0 10px 30px rgba(0,0,0,.45);
+}
+
 @supports not (backdrop-filter: blur(1px)){
   .glass,.lesson,.empty,.tabs,.nav,.iconbtn{background:rgba(255,255,255,.86)}
 }
@@ -384,6 +409,10 @@ details.pt summary::-webkit-details-marker{display:none}
   </div>
 </div>
 
+<div class="installbar" id="installBar" role="button" tabindex="0">
+  <span>把这个课表装到桌面</span><small>点这里</small>
+</div>
+
 <div class="mask" id="mask"></div>
 
 <div class="sheet" id="detail">
@@ -409,6 +438,8 @@ details.pt summary::-webkit-details-marker{display:none}
      style="display:block;text-align:center;text-decoration:none">下载日历文件</a>
   <a class="primary secondary" href="webcal://onepro07.github.io/timetable/timetable.ics"
      style="display:block;text-align:center;text-decoration:none">订阅日历（课表变了自动更新）</a>
+  <p class="tip">装到桌面：浏览器菜单里的「安装应用 / 添加到主屏幕」只给一次机会，
+     删掉图标后可能不再出现。这时去系统设置里把「课表」这个应用卸载干净，再打开网页即可重装。</p>
   <p class="tip">导入或订阅后，长按手机桌面空白处 → 添加小组件 → 选「日历 / 日程」，
      课表才会出现在桌面上。文件本身不会自己变成小组件。</p>
   <button class="primary secondary" id="setReset">恢复默认时间</button>
@@ -675,6 +706,28 @@ document.addEventListener('touchend', e => {
 
 boot();
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+
+/* ---------- 安装到桌面 ---------- */
+let installEvt = null;
+const installBar = $('#installBar');
+addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  installEvt = e;
+  installBar.classList.add('on');
+  setTimeout(() => installBar.classList.remove('on'), 12000);  // 12 秒后自己收起
+});
+installBar.onclick = async () => {
+  if(!installEvt) return;
+  installEvt.prompt();
+  const { outcome } = await installEvt.userChoice;
+  installBar.classList.remove('on');
+  installEvt = null;
+  if(outcome === 'dismissed') setTimeout(() => {}, 0);
+};
+addEventListener('appinstalled', () => installBar.classList.remove('on'));
+matchMedia('(display-mode: standalone)').addEventListener('change', e => {
+  if(e.matches) installBar.classList.remove('on');
+});
 </script>
 </body>
 </html>
